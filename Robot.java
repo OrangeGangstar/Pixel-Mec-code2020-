@@ -1,27 +1,13 @@
-/*----------------------------------------------------------------------------*/
-/* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
-/* Open Source Software - may be modified and shared by FRC teams. The code   */
-/* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */
-/*----------------------------------------------------------------------------*/
- 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.TimedRobot;                      //All these imports are needed so the code can 
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;  //work with motors, joysticks, drive station, etc.
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
-/**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the TimedRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the build.gradle file in the
- * project.
- */
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -29,21 +15,21 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private static final int legTopLeft = 2;   //motors PMW ports
+  private static final int legTopLeft = 2;   //setting up wheel motors to their PMW ports on the RobotRIO
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
 
-  private static final int gamer = 0; //joystick usb port
+  private static final int gamer = 0; //sets up joystick to connect to usb port 1 on the laptop/computer
 
-  private static final double USonHoldDist = 12.0; //ultrasonic hold value
-  private static final double MathValToDist = 0.125; //value used to convert sensor vals to inches
-  private static final double speedConst = 0.05; //set value constant speed value for robot using ultrasonic
-  private static final int UsonPort = 0; //ultrasonic analog port 
+  private static final double USonHoldDist = 12.0; //ultrasonic sensor limited before it stops the robot(in inches)
+  private static final double MathValToDist = 0.125; //set value used to convert sensor values to inches
+  private static final double speedConst = 0.05; //set constant speed value for robot using ultrasonic
+  private static final int UsonPort = 0; //ultrasonic analog port (aka Analog In on the RobotRIO)
 
-  private final AnalogInput AUsonIn = new AnalogInput(UsonPort);
-  private MecanumDrive MecPixel;
-  private Joystick gStick;
+  private final AnalogInput AUsonIn = new AnalogInput(UsonPort); //gives the ultrasonic sensor a name
+  private MecanumDrive MecPixel; //gives the drive train a name
+  private Joystick gStick;  //gives the joystick a name
 
   /**
    * This function is run when the robot is first started up and should be
@@ -55,17 +41,17 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    PWMVictorSPX TopL = new PWMVictorSPX(legTopLeft);
-    PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft);
+    PWMVictorSPX TopL = new PWMVictorSPX(legTopLeft);       //sets PMW motor ports to a respective name 
+    PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
     PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
     PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
 
-    TopL.setInverted(true);
+    TopL.setInverted(true); //flips the left side of motors for wheels
     BottomL.setInverted(true);
 
-    MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR);
-
-    gStick = new Joystick(gamer);
+    MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
+                                                               //that are linked to the wheels
+    gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
   }
 
   /**
@@ -114,23 +100,22 @@ public class Robot extends TimedRobot {
     }
   }
 
-  /**
-   * This function is called periodically during operator control.
-   */
+
+  // This function is called periodically during operator control.
   @Override
   public void teleopPeriodic() {
 
-    double currentDist = AUsonIn.getValue() *MathValToDist;
-    double UsonSpeed = (USonHoldDist - currentDist) * speedConst;
+    double currentDist = AUsonIn.getValue() *MathValToDist;       //ultrasonic sensor converting values to inches
+    double UsonSpeed = (USonHoldDist - currentDist) * speedConst; //converting inches to a speed
 
-    MecPixel.driveCartesian(UsonSpeed , gStick.getX(), gStick.getZ(), 0.0);
-    System.out.println(UsonSpeed);
-    Timer.delay(0.01);
-  }
+    MecPixel.driveCartesian(gStick.getY() , gStick.getX(), gStick.getZ(), 0.0); //sets driving to run using 
+                                                                                //joystick controls
+    System.out.println(currentDist);
 
-  /**
-   * This function is called periodically during test mode.
-   */
+    Timer.delay(0.01);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
+  }                       //over heating the RobotRIO
+
+   // This function is called periodically during test mode.
   @Override
   public void testPeriodic() {
   }
