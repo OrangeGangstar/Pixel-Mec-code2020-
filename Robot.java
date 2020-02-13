@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.cameraserver.*;
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -46,12 +47,17 @@ public class Robot extends TimedRobot {
     PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
     PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
 
-    TopL.setInverted(true); //flips the left side of motors for wheels
-    BottomL.setInverted(true);
+    TopL.setInverted(false); //flips the left side of motors for wheels
+    BottomL.setInverted(false);//false cause... yea
 
     MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
                                                                //that are linked to the wheels
     gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
+
+    CameraServer.getInstance().startAutomaticCapture();
+
+    
+    
   }
 
   /**
@@ -64,6 +70,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    double currentDist = AUsonIn.getValue() *MathValToDist;
+    System.out.println(currentDist);
+    System.out.println("hello");
+    System.out.println(gStick.getThrottle());
+    System.out.println("sfojsogjsojdfosdgj");
   }
 
   /**
@@ -108,9 +119,13 @@ public class Robot extends TimedRobot {
     double currentDist = AUsonIn.getValue() *MathValToDist;       //ultrasonic sensor converting values to inches
     double UsonSpeed = (USonHoldDist - currentDist) * speedConst; //converting inches to a speed
 
-    MecPixel.driveCartesian(gStick.getY() , gStick.getX(), gStick.getZ(), 0.0); //sets driving to run using 
+    yValue yylophone = new yValue(gStick.getY());
+    xValue xylophone = new xValue(gStick.getX());
+    zValue zylophone = new zValue(gStick.getZ());
+
+    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
                                                                                 //joystick controls
-    System.out.println(currentDist);
+    
 
     Timer.delay(0.01);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
   }                       //over heating the RobotRIO
@@ -119,4 +134,76 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
+}
+
+class yValue{
+  public yValue(double y){
+    yCal = y;
+  }
+  public double yJoy(){
+    if((yCal <= 0.2) && (yCal >= 0.0)){
+      return 0.0;
+    }
+    else if(yCal > 0.2){
+      return -yCal;
+    }
+    else if((yCal >= -0.2) && (yCal <= 0.0)){
+      return 0.0;
+    }
+    else if(yCal < -0.2){
+      return yCal;
+    }
+    else{
+      return 0.0;
+    }
+  }
+  public double yCal;
+}
+
+class xValue{
+  public xValue(double x){
+    xCal = x;
+  }
+public double xJoy(){
+  if((xCal <= 0.2) && (xCal >= 0.0)){
+    return 0.0;
+  }
+  else if(xCal > 0.2){
+    return -xCal;
+  }
+  else if((xCal >= -0.2) && (xCal <= 0.0)){
+    return 0.0;
+  }
+  else if(xCal < -0.2){
+    return xCal;
+  }
+  else{
+    return 0.0;
+  }
+}
+public double xCal;
+}
+
+class zValue{
+  public zValue(double z){
+    zCal = z;
+  }
+public double zJoy(){
+  if((zCal <= 0.3) && (zCal >= 0.0)){
+    return 0.0;
+  }
+  else if(zCal > 0.3){
+    return -zCal;
+  }
+  else if((zCal >= -0.3) && (zCal <= 0.0)){
+    return 0.0;
+  }
+  else if(zCal < -0.3){
+    return zCal;
+  }
+  else{
+    return 0.0;
+  }
+}
+public double zCal;
 }
