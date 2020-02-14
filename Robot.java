@@ -32,6 +32,13 @@ public class Robot extends TimedRobot {
   private MecanumDrive MecPixel; //gives the drive train a name
   private Joystick gStick;  //gives the joystick a name
 
+  PWMVictorSPX TopL = new PWMVictorSPX(legTopLeft);       //sets PMW motor ports to a respective name 
+  PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
+  PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
+  PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
+  
+
+
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
@@ -42,21 +49,17 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    PWMVictorSPX TopL = new PWMVictorSPX(legTopLeft);       //sets PMW motor ports to a respective name 
-    PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
-    PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
-    PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
-
     TopL.setInverted(false); //flips the left side of motors for wheels
     BottomL.setInverted(false);//false cause... yea
+
+    //TopL.setBounds(0.5, 0.5, 0.0, -0.5, -0.5);;
 
     MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
                                                                //that are linked to the wheels
     gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
 
     CameraServer.getInstance().startAutomaticCapture();
-
-    
+    CameraServer.getInstance().startAutomaticCapture();
     
   }
 
@@ -70,11 +73,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    double currentDist = AUsonIn.getValue() *MathValToDist;
-    System.out.println(currentDist);
-    System.out.println("hello");
-    System.out.println(gStick.getThrottle());
-    System.out.println("sfojsogjsojdfosdgj");
+    xValue xylophone = new xValue(gStick.getX());
+
+    System.out.println(gStick.getX());
+    System.out.println("asfsdfsdfsd");
+    System.out.println(xylophone.xJoy());
   }
 
   /**
@@ -125,7 +128,6 @@ public class Robot extends TimedRobot {
 
     MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
                                                                                 //joystick controls
-    
 
     Timer.delay(0.01);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
   }                       //over heating the RobotRIO
@@ -151,7 +153,7 @@ class yValue{
       return 0.0;
     }
     else if(yCal < -0.2){
-      return yCal;
+      return -yCal;
     }
     else{
       return 0.0;
@@ -169,7 +171,7 @@ public double xJoy(){
     return 0.0;
   }
   else if(xCal > 0.2){
-    return -xCal;
+    return xCal;
   }
   else if((xCal >= -0.2) && (xCal <= 0.0)){
     return 0.0;
@@ -193,7 +195,7 @@ public double zJoy(){
     return 0.0;
   }
   else if(zCal > 0.3){
-    return -zCal;
+    return zCal;
   }
   else if((zCal >= -0.3) && (zCal <= 0.0)){
     return 0.0;
