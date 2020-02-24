@@ -20,6 +20,11 @@ public class Robot extends TimedRobot {
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
+  private static final int SUCCid1 = 4; //other motors for other robot task
+  private static final int SUCCid2 = 5;
+  private static final int mom = 6;
+  private static final int OhYEAH = 7;
+  private static final int OhBONE = 8;
 
   private static final int gamer = 0; //sets up joystick to connect to usb port 1 on the laptop/computer
 
@@ -36,8 +41,11 @@ public class Robot extends TimedRobot {
   PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
   PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
   PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
-  
-
+  PWMVictorSPX DysonMotor1 = new PWMVictorSPX(SUCCid1);
+  PWMVictorSPX DysonMotor2 = new PWMVictorSPX(SUCCid2);
+  PWMVictorSPX FRICK = new PWMVictorSPX(mom);
+  PWMVictorSPX CraftsmanBLOW1 = new PWMVictorSPX(OhYEAH);
+  PWMVictorSPX CraftsmanBLOW2 = new PWMVictorSPX(OhBONE);
 
   /**
    * This function is run when the robot is first started up and should be
@@ -52,7 +60,6 @@ public class Robot extends TimedRobot {
     TopL.setInverted(false); //flips the left side of motors for wheels
     BottomL.setInverted(false);//false cause... yea
 
-    //TopL.setBounds(0.5, 0.5, 0.0, -0.5, -0.5);;
 
     MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
                                                                //that are linked to the wheels
@@ -126,10 +133,35 @@ public class Robot extends TimedRobot {
     xValue xylophone = new xValue(gStick.getX());
     zValue zylophone = new zValue(gStick.getZ());
 
-    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
-                                                                                //joystick controls
+    Fricker Shaquille = new Fricker(gStick.getThrottle());
 
-    Timer.delay(0.01);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
+    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
+                                                                                      //joystick controls
+
+    FRICK.set(Shaquille.fThot());
+
+    if(gStick.getX() > 0.0) // needs bbig brain and time
+      TopL.set(gStick.getX() * 0.8);
+
+    if(gStick.getRawButton(2) == true){
+        DysonMotor1.set(0.80);
+        DysonMotor2.set(-0.80);
+    }
+    else{
+      DysonMotor1.set(0.0);
+      DysonMotor2.set(0.0);
+    }
+
+    if(gStick.getRawButton(1) == true){
+        CraftsmanBLOW1.set(0.7);
+        CraftsmanBLOW2.set(-0.7);
+    }
+    else{
+        CraftsmanBLOW1.set(0.0);
+        CraftsmanBLOW2.set(0.0);
+    }
+
+    Timer.delay(0.005);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
   }                       //over heating the RobotRIO
 
    // This function is called periodically during test mode.
@@ -208,4 +240,28 @@ public double zJoy(){
   }
 }
 public double zCal;
+}
+
+class Fricker{
+  public Fricker(double f){
+    fCal = f;
+  }
+  public double fThot(){
+    if((fCal <= 0.4)&& (fCal >= 0.0)){
+      return 0.0;
+    }
+    else if (fCal > 0.4){
+      return -fCal;
+    }
+    else if((fCal >= -0.4) && (fCal <= 0.0)){
+      return 0.0;
+    }
+    else if(fCal < -0.4){
+      return -fCal;
+    }
+    else{
+      return 0.0;
+    }
+  }
+public double fCal;
 }
