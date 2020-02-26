@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Timer; 
 import edu.wpi.first.cameraserver.*;
 
 public class Robot extends TimedRobot {
@@ -20,11 +20,9 @@ public class Robot extends TimedRobot {
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
-  private static final int SUCCid1 = 4; //other motors for other robot task
-  private static final int SUCCid2 = 5;
+  private static final int SUCC = 4; //other motors for other robot task
+  private static final int EXHALE = 5;
   private static final int mom = 6;
-  private static final int OhYEAH = 7;
-  private static final int OhBONE = 8;
 
   private static final int gamer = 0; //sets up joystick to connect to usb port 1 on the laptop/computer
 
@@ -41,11 +39,11 @@ public class Robot extends TimedRobot {
   PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
   PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
   PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
-  PWMVictorSPX DysonMotor1 = new PWMVictorSPX(SUCCid1);
-  PWMVictorSPX DysonMotor2 = new PWMVictorSPX(SUCCid2);
+  PWMVictorSPX DysonMotor = new PWMVictorSPX(SUCC);
+  PWMVictorSPX craftsmanBLOW = new PWMVictorSPX(EXHALE);
   PWMVictorSPX FRICK = new PWMVictorSPX(mom);
-  PWMVictorSPX CraftsmanBLOW1 = new PWMVictorSPX(OhYEAH);
-  PWMVictorSPX CraftsmanBLOW2 = new PWMVictorSPX(OhBONE);
+
+  Timer clock = new Timer();
 
   /**
    * This function is run when the robot is first started up and should be
@@ -58,7 +56,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     TopL.setInverted(false); //flips the left side of motors for wheels
-    BottomL.setInverted(false);//false cause... yea
+    BottomL.setInverted(false);//false cause... not needed this year
 
 
     MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
@@ -67,7 +65,6 @@ public class Robot extends TimedRobot {
 
     CameraServer.getInstance().startAutomaticCapture();
     CameraServer.getInstance().startAutomaticCapture();
-    
   }
 
   /**
@@ -80,11 +77,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    xValue xylophone = new xValue(gStick.getX());
-
-    System.out.println(gStick.getX());
-    System.out.println("asfsdfsdfsd");
-    System.out.println(xylophone.xJoy());
+    double currentDist = AUsonIn.getValue() - 220;
+    System.out.println(currentDist);
+    //System.out.println("asfsdfsdfsd");
+    //System.out.println(xylophone.xJoy());
   }
 
   /**
@@ -101,8 +97,10 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
+    m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+    clock.reset();
+		clock.start();
   }
 
   /**
@@ -116,8 +114,15 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-        // Put default auto code here
+      
+      if (clock.get() < 10.0) {
+        MecPixel.driveCartesian(0.0, 0.7, 0.0,0); // drive forwards half speed
+        }
+      else {
+        MecPixel.driveCartesian(0.0, 0.0, 0.0, 0.0);
+      }
         break;
+
     }
   }
 
@@ -126,8 +131,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    double currentDist = AUsonIn.getValue() *MathValToDist;       //ultrasonic sensor converting values to inches
-    double UsonSpeed = (USonHoldDist - currentDist) * speedConst; //converting inches to a speed
 
     yValue yylophone = new yValue(gStick.getY());
     xValue xylophone = new xValue(gStick.getX());
@@ -137,28 +140,22 @@ public class Robot extends TimedRobot {
 
     MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
                                                                                       //joystick controls
-
+    
     FRICK.set(Shaquille.fThot());
 
-    if(gStick.getX() > 0.0) // needs bbig brain and time
-      TopL.set(gStick.getX() * 0.8);
 
     if(gStick.getRawButton(2) == true){
-        DysonMotor1.set(0.80);
-        DysonMotor2.set(-0.80);
+        DysonMotor.set(0.80);
     }
     else{
-      DysonMotor1.set(0.0);
-      DysonMotor2.set(0.0);
+      DysonMotor.set(0.0);
     }
 
     if(gStick.getRawButton(1) == true){
-        CraftsmanBLOW1.set(0.7);
-        CraftsmanBLOW2.set(-0.7);
+        craftsmanBLOW.set(0.7);
     }
     else{
-        CraftsmanBLOW1.set(0.0);
-        CraftsmanBLOW2.set(0.0);
+        craftsmanBLOW.set(0.0);
     }
 
     Timer.delay(0.005);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
