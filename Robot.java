@@ -12,15 +12,15 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.cameraserver.*;
 import edu.wpi.first.wpilibj.util.Color;
 
-import com.revrobotics.ColorSensorV3;		//these import will not work without the rev robotics libraries that needed to be installed
-import com.revrobotics.ColorMatchResult;	//to vscode and can be found on rev robotics color sensor page: http://www.revrobotics.com/rev-31-1557/
+import com.revrobotics.ColorSensorV3; //http://revrobotics.com/content/sw/color-sensor-v3/sdk/REVColorSensorV3.json
+import com.revrobotics.ColorMatchResult;
 import com.revrobotics.ColorMatch;
 
 public class Robot extends TimedRobot {
-  private static final String Blue_1 = "Blue_1";
-  private static final String Red_1 = "Red_1";
-  private String AutoSelected;
-  private final SendableChooser<String> AutoChooser = new SendableChooser<>();
+  private static final String kDefaultAuto = "Blue_1";
+  private static final String kCustomAuto = "Red_1";
+  private String m_autoSelected;
+  private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   private static final int legTopLeft = 2;   //setting up wheel motors to their PMW ports on the RobotRIO
   private static final int legBottomLeft = 3;
@@ -29,6 +29,8 @@ public class Robot extends TimedRobot {
   private static final int SUCC = 4; //other motors for other robot task
   private static final int EXHALE = 5;
   private static final int mom = 6;
+  private static final int SUCC1 = 7;
+  private static final int EXHALE1 = 8;
 
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
@@ -47,6 +49,7 @@ public class Robot extends TimedRobot {
   PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
   PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
   PWMVictorSPX DysonMotor = new PWMVictorSPX(SUCC);
+  PWMVictorSPX DysonMotor = new P
   PWMVictorSPX craftsmanBLOW = new PWMVictorSPX(EXHALE);
   PWMVictorSPX FRICK = new PWMVictorSPX(mom);
 
@@ -66,9 +69,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    AutoChooser.setDefaultOption("Blue_1", Blue_1);
-    AutoChooser.addOption("Red_1", Red_1);
-    SmartDashboard.putData("Auto choices", AutoChooser);
+    m_chooser.setDefaultOption("Forward only", kDefaultAuto);
+    m_chooser.addOption("Back only", kCustomAuto);
+    SmartDashboard.putData("Auto choices", m_chooser);
     
     TopL.setInverted(false); //flips the left side of motors for wheels
     BottomL.setInverted(false);//false cause... not needed this year
@@ -98,8 +101,6 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     double currentDist = AUsonIn.getValue() ;
     System.out.println(currentDist);
-    //System.out.println("asfsdfsdfsd");
-    //System.out.println(xylophone.xJoy());
   }
 
   /**
@@ -115,40 +116,43 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    AutoSelected = AutoChooser.getSelected();
-    AutoSelected = SmartDashboard.getString("Auto Selector", Blue_1);
-    System.out.println("Auto selected: " + AutoSelected);
+    m_autoSelected = m_chooser.getSelected();
+    m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
+    System.out.println("Auto selected: " + m_autoSelected);
 
     clock.reset();
 		clock.start();
   }
 
-  /**
+  /*
    * This function is called periodically during autonomous.
    */
   @Override
   public void autonomousPeriodic() {
-    switch (AutoSelected) {
-      case Blue_1:
-        // Put custom auto code here
-        break;
-      case Red_1:
-      default:
-          if (clock.get() < 10.0) {
-            MecPixel.driveCartesian(0.0, 0.7, 0.0,0); // drive forwards half speed
+    switch (m_autoSelected) {
+      case kCustomAuto:
+          if (clock.get() < 7.0) {
+            MecPixel.driveCartesian(0.0, -0.6, 0.0,0); // drive forwards
             }
           else {
             MecPixel.driveCartesian(0.0, 0.0, 0.0, 0.0);
           }
         break;
-
+      case kDefaultAuto:
+      default:
+          if (clock.get() < 7.0) {
+            MecPixel.driveCartesian(0.0, 0.6, 0.0,0); // drive forwards
+            }
+          else {
+            MecPixel.driveCartesian(0.0, 0.0, 0.0, 0.0);
+          }
+        break;
     }
   }
 
   // This function is called periodically during operator control.
   @Override
   public void teleopPeriodic() {
-
     yValue yylophone = new yValue(gStick.getY());
     xValue xylophone = new xValue(gStick.getX());
     zValue zylophone = new zValue(gStick.getZ());
@@ -156,8 +160,10 @@ public class Robot extends TimedRobot {
     Fricker Shaquille = new Fricker(gStick.getThrottle());
 
     Color pewach = chop.getColor();
-    String colorString;
+    String colorString = "c";
     ColorMatchResult match = reeves.matchClosestColor(pewach);
+
+    ink colorPrint = new ink(pewach, colorString, match, BlueBoi, RedBoi, GreenBoi, YellowBoi);
 
     if(match.color == BlueBoi){
       colorString = "BLUE";
@@ -181,11 +187,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Confidence", match.confidence);
     SmartDashboard.putString("Detected Color", colorString);
 
-    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using 
+    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using  //joystick controls
                                                                                         //joystick controls
-    
     FRICK.set(Shaquille.fThot());
-
 
     if(gStick.getRawButton(2) == true){
         DysonMotor.set(0.80);
@@ -195,10 +199,10 @@ public class Robot extends TimedRobot {
     }
 
     if(gStick.getRawButton(1) == true){
-        craftsmanBLOW.set(0.7);
+        craftsmanBLOW.set(-1.0);
     }
     else if(gStick.getRawButton(3) == true){
-        craftsmanBLOW.set(0.2);
+        craftsmanBLOW.set(-0.5);
     }
     else{
         craftsmanBLOW.set(0.0);
@@ -208,30 +212,47 @@ public class Robot extends TimedRobot {
       while(match.color != BlueBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
+        FRICK.set(0.5);
+        SmartDashboard.putNumber("Red", pewach.red);
+        SmartDashboard.putString("Detected Color", colorPrint.colorSplash());
+        if(gStick.getRawButton(8) == true)
+          break;
+      }
+    }
+    else if(gStick.getRawButton(10) == true){
+      while(match.color != RedBoi){
+        pewach = chop.getColor();
+        match = reeves.matchClosestColor(pewach);
         FRICK.set(0.5);   
-        if(match.color == BlueBoi){
-          colorString = "BLUE";
-        }
-        else if(match.color == RedBoi){
-          colorString = "RED";
-        }
-        else if(match.color == GreenBoi){
-          colorString = "GREEN";
-        }
-        else if(match.color == YellowBoi){
-          colorString = "YELLOW";
-        }
-        else{
-          colorString = "UNKNOWN";
-        }
-        SmartDashboard.putString("Detected Color", colorString);
+        //colorPrint.colorSplash();
+        if(gStick.getRawButton(8) == true)
+          break;
+      }
+    }
+    else if(gStick.getRawButton(11)){
+      while(match.color != GreenBoi){
+        pewach = chop.getColor();
+        match = reeves.matchClosestColor(pewach);
+        FRICK.set(0.5);   
+        //colorPrint.colorSplash();
+        if(gStick.getRawButton(8) == true)
+          break;
+      }
+    }
+    else if(gStick.getRawButton(12)){
+      while(match.color != YellowBoi){
+        pewach = chop.getColor();
+        match = reeves.matchClosestColor(pewach);
+        FRICK.set(0.5);   
+        //colorPrint.colorSplash();
+        if(gStick.getRawButton(8) == true)
+          break;
       }
     }
     else{
-      FRICK.set(0.0);
     }
 
-    Timer.delay(0.005);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
+    Timer.delay(0.001);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
   }                       //over heating the RobotRIO
 
    // This function is called periodically during test mode.
@@ -297,13 +318,13 @@ public double zJoy(){
     return 0.0;
   }
   else if(zCal > 0.3){
-    return zCal;
+    return (zCal * 0.8);
   }
   else if((zCal >= -0.3) && (zCal <= 0.0)){
     return 0.0;
   }
   else if(zCal < -0.3){
-    return zCal;
+    return (zCal * 0.8);
   }
   else{
     return 0.0;
@@ -334,4 +355,41 @@ class Fricker{
     }
   }
 public double fCal;
+}
+
+class ink{
+  public ink(Color c, String s, ColorMatchResult r, Color b1, Color r1, Color g1, Color y1){
+    pewach = c;
+    colorStr = s;
+    match = r;
+    bBoi = b1;
+    rBoi = r1;
+    gBoi = g1;
+    yBoi = y1;
+  }
+  public String colorSplash(){
+    if(match.color == bBoi){
+      colorStr = "BLUE";
+    }
+    else if(match.color == rBoi){
+      colorStr = "RED";
+    }
+    else if(match.color == gBoi){
+      colorStr = "GREEN";
+    }
+    else if(match.color == yBoi){
+      colorStr = "YELLOW";
+    }
+    else{
+      colorStr = "UNKNOWN";
+    }
+    return colorStr;
+  }
+  public Color pewach;
+  public String colorStr;
+  public ColorMatchResult match;
+  public Color bBoi;
+  public Color rBoi;
+  public Color gBoi;
+  public Color yBoi;
 }
