@@ -17,8 +17,8 @@ import com.revrobotics.ColorMatchResult;
 import com.revrobotics.ColorMatch;
 
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Blue_1";
-  private static final String kCustomAuto = "Red_1";
+  private static final String kDefaultAuto = "Default";
+  private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
@@ -26,11 +26,13 @@ public class Robot extends TimedRobot {
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
-  private static final int SUCC = 4; //other motors for other robot task
-  private static final int EXHALE = 5;
+  private static final int SUCC1 = 4; //other motors for other robot task
+  private static final int EXHALE1 = 5;
   private static final int mom = 6;
-  private static final int SUCC1 = 7;
-  private static final int EXHALE1 = 8;
+  private static final int SUCC2 = 7;
+  private static final int EXHALE2 = 8;
+
+  int replay = 0;
 
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
@@ -48,9 +50,10 @@ public class Robot extends TimedRobot {
   PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
   PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
   PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
-  PWMVictorSPX DysonMotor = new PWMVictorSPX(SUCC);
-  PWMVictorSPX DysonMotor = new P
-  PWMVictorSPX craftsmanBLOW = new PWMVictorSPX(EXHALE);
+  PWMVictorSPX DysonMotor1 = new PWMVictorSPX(SUCC1);
+  PWMVictorSPX DysonMotor2 = new PWMVictorSPX(SUCC2);
+  PWMVictorSPX craftsmanBLOW1 = new PWMVictorSPX(EXHALE1);
+  PWMVictorSPX craftsmanBLOW2 = new PWMVictorSPX(EXHALE2);
   PWMVictorSPX FRICK = new PWMVictorSPX(mom);
 
   private final ColorSensorV3 chop = new ColorSensorV3(i2cPort);
@@ -73,15 +76,17 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("Back only", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
     
+    CameraServer.getInstance().startAutomaticCapture();
+    CameraServer.getInstance().startAutomaticCapture();
+
     TopL.setInverted(false); //flips the left side of motors for wheels
     BottomL.setInverted(false);//false cause... not needed this year
 
     MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
-                                                               //that are linked to the wheels
+                                                              //that are linked to the wheels
+    MecPixel.setExpiration(0.1);
+                                                              
     gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
-
-    CameraServer.getInstance().startAutomaticCapture();
-    CameraServer.getInstance().startAutomaticCapture();
 
     reeves.addColorMatch(BlueBoi);
     reeves.addColorMatch(GreenBoi);
@@ -101,6 +106,8 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     double currentDist = AUsonIn.getValue() ;
     System.out.println(currentDist);
+    
+    MecPixel.setSafetyEnabled(true);
   }
 
   /**
@@ -131,21 +138,21 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
       case kCustomAuto:
-          if (clock.get() < 7.0) {
-            MecPixel.driveCartesian(0.0, -0.6, 0.0,0); // drive forwards
+          if(replay == 0){
+            while(clock.get() < 3.0){ 
+              MecPixel.driveCartesian(0.0, -0.3, 0.0, 0); // drive forwards
             }
-          else {
-            MecPixel.driveCartesian(0.0, 0.0, 0.0, 0.0);
+            replay++;
           }
         break;
       case kDefaultAuto:
       default:
-          if (clock.get() < 7.0) {
-            MecPixel.driveCartesian(0.0, 0.6, 0.0,0); // drive forwards
-            }
-          else {
-            MecPixel.driveCartesian(0.0, 0.0, 0.0, 0.0);
-          }
+      if(replay == 0){
+        while(clock.get() < 3.0){ 
+          MecPixel.driveCartesian(0.0, 0.3, 0.0, 0); // drive forwards
+        }
+        replay++;
+      }
         break;
     }
   }
@@ -192,29 +199,36 @@ public class Robot extends TimedRobot {
     FRICK.set(Shaquille.fThot());
 
     if(gStick.getRawButton(2) == true){
-        DysonMotor.set(0.80);
+        DysonMotor1.set(-0.70);
+        DysonMotor2.set(-0.70);
+    }
+    else if(gStick.getRawButton(6) == true){
+        DysonMotor1.set(0.7);
+        DysonMotor2.set(0.7);
     }
     else{
-      DysonMotor.set(0.0);
+      DysonMotor1.set(0.0);
+      DysonMotor2.set(0.0);
     }
 
     if(gStick.getRawButton(1) == true){
-        craftsmanBLOW.set(-1.0);
+        craftsmanBLOW1.set(-1.0);
+        craftsmanBLOW2.set(1.0);
     }
     else if(gStick.getRawButton(3) == true){
-        craftsmanBLOW.set(-0.5);
+        craftsmanBLOW1.set(-0.50);
+        craftsmanBLOW2.set(0.50);
     }
     else{
-        craftsmanBLOW.set(0.0);
+        craftsmanBLOW1.set(0.0);
+        craftsmanBLOW2.set(0.0);
     }
 
     if(gStick.getRawButton(9) == true){
       while(match.color != BlueBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.5);
-        SmartDashboard.putNumber("Red", pewach.red);
-        SmartDashboard.putString("Detected Color", colorPrint.colorSplash());
+        FRICK.set(0.25);                            //goes to red
         if(gStick.getRawButton(8) == true)
           break;
       }
@@ -223,7 +237,7 @@ public class Robot extends TimedRobot {
       while(match.color != RedBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.5);   
+        FRICK.set(0.25);                            //goes to blue
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
@@ -233,7 +247,7 @@ public class Robot extends TimedRobot {
       while(match.color != GreenBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.5);   
+        FRICK.set(0.25);                            //goes to yellow
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
@@ -243,7 +257,7 @@ public class Robot extends TimedRobot {
       while(match.color != YellowBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.5);   
+        FRICK.set(0.5);                            //goes to green
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
@@ -270,13 +284,13 @@ class yValue{
       return 0.0;
     }
     else if(yCal > 0.2){
-      return -yCal;
+      return -yCal * 0.9;
     }
     else if((yCal >= -0.2) && (yCal <= 0.0)){
       return 0.0;
     }
     else if(yCal < -0.2){
-      return -yCal;
+      return -yCal * 0.9;
     }
     else{
       return 0.0;
@@ -294,13 +308,13 @@ public double xJoy(){
     return 0.0;
   }
   else if(xCal > 0.2){
-    return xCal;
+    return xCal * 0.9;
   }
   else if((xCal >= -0.2) && (xCal <= 0.0)){
     return 0.0;
   }
   else if(xCal < -0.2){
-    return xCal;
+    return xCal * 0.9;
   }
   else{
     return 0.0;
@@ -318,13 +332,13 @@ public double zJoy(){
     return 0.0;
   }
   else if(zCal > 0.3){
-    return (zCal * 0.8);
+    return (zCal * 0.5);
   }
   else if((zCal >= -0.3) && (zCal <= 0.0)){
     return 0.0;
   }
   else if(zCal < -0.3){
-    return (zCal * 0.8);
+    return (zCal * 0.5);
   }
   else{
     return 0.0;
