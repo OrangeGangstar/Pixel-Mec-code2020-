@@ -33,7 +33,7 @@ public class Robot extends TimedRobot {
   private static final int EXHALE2 = 8;
 
   int replay = 0;
-
+  double topSpin = 0;
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
   private static final int gamer = 0; //sets up joystick to connect to usb port 1 on the laptop/computer
@@ -228,7 +228,7 @@ public class Robot extends TimedRobot {
       while(match.color != BlueBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.25);                            //goes to red
+        FRICK.set(0.35);                            //goes to red
         if(gStick.getRawButton(8) == true)
           break;
       }
@@ -237,7 +237,7 @@ public class Robot extends TimedRobot {
       while(match.color != RedBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.25);                            //goes to blue
+        FRICK.set(0.35);                            //goes to blue
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
@@ -247,7 +247,7 @@ public class Robot extends TimedRobot {
       while(match.color != GreenBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.25);                            //goes to yellow
+        FRICK.set(0.35);                            //goes to yellow
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
@@ -257,13 +257,41 @@ public class Robot extends TimedRobot {
       while(match.color != YellowBoi){
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
-        FRICK.set(0.5);                            //goes to green
+        FRICK.set(0.35);                            //goes to green
         //colorPrint.colorSplash();
         if(gStick.getRawButton(8) == true)
           break;
       }
     }
     else{
+    }
+
+    if(gStick.getRawButton(7) == true){
+      while(topSpin < 3.8){
+      FRICK.set(0.35);
+
+      pewach = chop.getColor();
+      match = reeves.matchClosestColor(pewach);
+
+      if(match.color == BlueBoi){
+        colorString = "BLUE";
+      }
+      else if(match.color == RedBoi){
+        colorString = "RED";
+      }
+      else if(match.color == GreenBoi){
+        colorString = "GREEN";
+      }
+      else if(match.color == YellowBoi){
+        colorString = "YELLOW";
+      }
+      else{
+        colorString = "UNKNOWN";
+      }
+
+        if(colorString == "GREEN")
+          topSpin = topSpin + 0.5;
+      }
     }
 
     Timer.delay(0.001);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
