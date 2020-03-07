@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.Timer; 
 import edu.wpi.first.cameraserver.*;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import com.revrobotics.ColorSensorV3; //http://revrobotics.com/content/sw/color-sensor-v3/sdk/REVColorSensorV3.json
 import com.revrobotics.ColorMatchResult;
@@ -34,6 +35,7 @@ public class Robot extends TimedRobot {
 
   int replay = 0;
   double topSpin = 0;
+
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
   private static final int gamer = 0; //sets up joystick to connect to usb port 1 on the laptop/computer
@@ -73,7 +75,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     m_chooser.setDefaultOption("Forward only", kDefaultAuto);
-    m_chooser.addOption("Back only", kCustomAuto);
+    m_chooser.addOption("Back shooter", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
     
     CameraServer.getInstance().startAutomaticCapture();
@@ -103,10 +105,7 @@ public class Robot extends TimedRobot {
    * LiveWindow and SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {
-    double currentDist = AUsonIn.getValue() ;
-    System.out.println(currentDist);
-    
+  public void robotPeriodic(){
     MecPixel.setSafetyEnabled(true);
   }
 
@@ -139,8 +138,17 @@ public class Robot extends TimedRobot {
     switch (m_autoSelected) {
       case kCustomAuto:
           if(replay == 0){
-            while(clock.get() < 3.0){ 
-              MecPixel.driveCartesian(0.0, -0.3, 0.0, 0); // drive forwards
+            while(clock.get() < 1.0){ 
+              MecPixel.driveCartesian(0.0, -0.4, 0.0, 0); // drive forwards
+            }
+            while((clock.get() < 0.7) && (clock.get() > 1.0)){
+              DysonMotor1.set(-0.70);
+              DysonMotor2.set(-0.70);
+              craftsmanBLOW1.set(-1.0);
+              craftsmanBLOW2.set(1.0);
+            }
+            while((clock.get() < 0.9) && (clock.get() > 0.7)){
+              MecPixel.driveCartesian(0.0, -0.25, 0.0, 0);
             }
             replay++;
           }
@@ -149,7 +157,7 @@ public class Robot extends TimedRobot {
       default:
       if(replay == 0){
         while(clock.get() < 3.0){ 
-          MecPixel.driveCartesian(0.0, 0.3, 0.0, 0); // drive forwards
+          MecPixel.driveCartesian(0.0, 0.25, 0.0, 0); // drive forwards
         }
         replay++;
       }
@@ -170,7 +178,7 @@ public class Robot extends TimedRobot {
     String colorString = "c";
     ColorMatchResult match = reeves.matchClosestColor(pewach);
 
-    ink colorPrint = new ink(pewach, colorString, match, BlueBoi, RedBoi, GreenBoi, YellowBoi);
+    //ink colorPrint = new ink(pewach, colorString, match, BlueBoi, RedBoi, GreenBoi, YellowBoi);
 
     if(match.color == BlueBoi){
       colorString = "BLUE";
@@ -193,18 +201,19 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Blue", pewach.blue);
     SmartDashboard.putNumber("Confidence", match.confidence);
     SmartDashboard.putString("Detected Color", colorString);
+    SmartDashboard.putNumber("# of Spins", topSpin);
 
     MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using  //joystick controls
                                                                                         //joystick controls
     FRICK.set(Shaquille.fThot());
 
     if(gStick.getRawButton(2) == true){
-        DysonMotor1.set(-0.70);
-        DysonMotor2.set(-0.70);
+        DysonMotor1.set(-0.78);
+        DysonMotor2.set(-0.78);
     }
     else if(gStick.getRawButton(6) == true){
-        DysonMotor1.set(0.7);
-        DysonMotor2.set(0.7);
+        DysonMotor1.set(0.70);
+        DysonMotor2.set(0.70);
     }
     else{
       DysonMotor1.set(0.0);
@@ -212,12 +221,12 @@ public class Robot extends TimedRobot {
     }
 
     if(gStick.getRawButton(1) == true){
-        craftsmanBLOW1.set(-1.0);
-        craftsmanBLOW2.set(1.0);
+        craftsmanBLOW1.set(-0.37);
+        craftsmanBLOW2.set(0.37);
     }
     else if(gStick.getRawButton(3) == true){
-        craftsmanBLOW1.set(-0.50);
-        craftsmanBLOW2.set(0.50);
+        craftsmanBLOW1.set(-1.0);
+        craftsmanBLOW2.set(1.0);
     }
     else{
         craftsmanBLOW1.set(0.0);
@@ -265,11 +274,10 @@ public class Robot extends TimedRobot {
     }
     else{
     }
-
+/*
     if(gStick.getRawButton(7) == true){
       while(topSpin < 3.8){
       FRICK.set(0.35);
-
       pewach = chop.getColor();
       match = reeves.matchClosestColor(pewach);
 
@@ -289,10 +297,39 @@ public class Robot extends TimedRobot {
         colorString = "UNKNOWN";
       }
 
-        if(colorString == "GREEN")
+      if(colorString == "GREEN")
           topSpin = topSpin + 0.5;
+      
+      SmartDashboard.putNumber("# of Spins", topSpin);
+      if(gStick.getRawButton(8))
+        break; 
       }
     }
+*/
+    String gameData;
+    gameData = DriverStation.getInstance().getGameSpecificMessage();
+    if(gameData.length() > 0){
+      switch(gameData.charAt(0)){
+        case 'B':
+          System.out.println("B");
+          break;
+        case 'G':
+          System.out.println("G");
+          break;
+        case 'R':
+          System.out.println("R");
+          break;
+        case 'Y':
+          System.out.println("Y");
+          break;
+        default:
+          break;
+      }
+    }
+    else{
+    }
+    
+    topSpin = 0;
 
     Timer.delay(0.001);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
   }                       //over heating the RobotRIO
@@ -312,13 +349,13 @@ class yValue{
       return 0.0;
     }
     else if(yCal > 0.2){
-      return -yCal * 0.9;
+      return -yCal * 0.95;
     }
     else if((yCal >= -0.2) && (yCal <= 0.0)){
       return 0.0;
     }
     else if(yCal < -0.2){
-      return -yCal * 0.9;
+      return -yCal * 0.95;
     }
     else{
       return 0.0;
@@ -336,13 +373,13 @@ public double xJoy(){
     return 0.0;
   }
   else if(xCal > 0.2){
-    return xCal * 0.9;
+    return xCal;
   }
   else if((xCal >= -0.2) && (xCal <= 0.0)){
     return 0.0;
   }
   else if(xCal < -0.2){
-    return xCal * 0.9;
+    return xCal * 0.85;
   }
   else{
     return 0.0;
@@ -360,13 +397,13 @@ public double zJoy(){
     return 0.0;
   }
   else if(zCal > 0.3){
-    return (zCal * 0.5);
+    return (zCal * 0.8);
   }
   else if((zCal >= -0.3) && (zCal <= 0.0)){
     return 0.0;
   }
   else if(zCal < -0.3){
-    return (zCal * 0.5);
+    return (zCal * 0.8);
   }
   else{
     return 0.0;
