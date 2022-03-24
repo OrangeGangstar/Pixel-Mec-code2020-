@@ -1,21 +1,22 @@
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;                      //All these imports are needed so the code can 
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;  //work with motors, joysticks, drive station, etc.
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
-import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive; 
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
+import edu.wpi.first.wpilibj.motorcontrol.PWMTalonSRX;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.I2C;
-import edu.wpi.first.wpilibj.Timer; 
 import edu.wpi.first.cameraserver.*;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.DriverStation;
-
-import com.revrobotics.ColorSensorV3; //http://revrobotics.com/content/sw/color-sensor-v3/sdk/REVColorSensorV3.json
-import com.revrobotics.ColorMatchResult;
-import com.revrobotics.ColorMatch;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -23,18 +24,24 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  //decalring intigers (PWM ports) for motor controllers
   private static final int legTopLeft = 2;   //setting up wheel motors to their PMW ports on the RobotRIO
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
-  private static final int SUCC1 = 4; //other motors for other robot task
-  private static final int EXHALE1 = 5;
-  private static final int mom = 6;
-  private static final int SUCC2 = 7;
-  private static final int EXHALE2 = 8;
+  private static final int SUCC = 4; //other motors for other robot task
+  private static final int EXHALE = 5;
+  private static final int LIFT = 6;
+  private static final int DROP = 7;
+
+  //declaring integers (DIO ports) for sensors
+  private static final int HALT = 0;
+  private static final int CEASE = 1;
 
   int replay = 0;
   double topSpin = 0;
+  double output;
+  private double startTime;
 
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
@@ -45,28 +52,29 @@ public class Robot extends TimedRobot {
   private static final int UsonPort = 0; //ultrasonic analog port (aka Analog In on the RobotRIO)
 
   private final AnalogInput AUsonIn = new AnalogInput(UsonPort); //gives the ultrasonic sensor a name
-  private MecanumDrive MecPixel; //gives the drive train a name
+  private DifferentialDrive DifOrange; //gives the drive train a name
   private Joystick gStick;  //gives the joystick a name
 
-  PWMVictorSPX TopL = new PWMVictorSPX(legTopLeft);       //sets PMW motor ports to a respective name 
-  PWMVictorSPX BottomL = new PWMVictorSPX(legBottomLeft); //for the wheels
-  PWMVictorSPX TopR = new PWMVictorSPX(legTopRight);
-  PWMVictorSPX BottomR = new PWMVictorSPX(legBottomRight);
-  PWMVictorSPX DysonMotor1 = new PWMVictorSPX(SUCC1);
-  PWMVictorSPX DysonMotor2 = new PWMVictorSPX(SUCC2);
-  PWMVictorSPX craftsmanBLOW1 = new PWMVictorSPX(EXHALE1);
-  PWMVictorSPX craftsmanBLOW2 = new PWMVictorSPX(EXHALE2);
-  PWMVictorSPX FRICK = new PWMVictorSPX(mom);
-
+  MotorController m_frontLeft = new PWMVictorSPX(legTopLeft);
+  MotorController m_backLeft = new PWMTalonSRX(legBottomLeft);
+  MotorControllerGroup m_left = new MotorControllerGroup(m_frontLeft, m_backLeft);
+  MotorController m_frontRight = new PWMVictorSPX(legTopRight);
+  MotorController m_backRight = new PWMTalonSRX(legBottomRight);
+  MotorControllerGroup m_right = new MotorControllerGroup(m_frontRight, m_backRight);
+  PWMVictorSPX DysonMotor = new PWMVictorSPX(SUCC);
+  PWMVictorSPX craftsmanBLOW = new PWMVictorSPX(EXHALE);
+  PWMVictorSPX MeganTheeStallion = new PWMVictorSPX(LIFT);
+  PWMSparkMax DojaCat = new PWMSparkMax(DROP);  /*
   private final ColorSensorV3 chop = new ColorSensorV3(i2cPort);
   private final ColorMatch reeves = new ColorMatch();
 
-  private final Color BlueBoi = ColorMatch.makeColor(0.143, 0.427, 0.429);
+  private fi89al Color BlueBoi = ColorMatch.makeColor(0.143, 0.427, 0.429);
   private final Color GreenBoi = ColorMatch.makeColor(0.197, 0.561, 0.240);
   private final Color RedBoi = ColorMatch.makeColor(0.561, 0.232, 0.114);
   private final Color YellowBoi = ColorMatch.makeColor(0.361, 0.524, 0.113);
-  
-  Timer clock = new Timer();
+  */
+  DigitalInput DomGoth = new DigitalInput(HALT);
+  DigitalInput SubFemboy= new DigitalInput(CEASE);
 
   /**
    * This function is run when the robot is first started up and should be
@@ -79,23 +87,23 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
     
     CameraServer.getInstance().startAutomaticCapture();
-    CameraServer.getInstance().startAutomaticCapture();
 
-    TopL.setInverted(false); //flips the left side of motors for wheels
-    BottomL.setInverted(false);//false cause... not needed this year
-
-    MecPixel = new MecanumDrive(TopL, BottomL, TopR, BottomR); //hooks up the drive train with the PMW motors
-                                                              //that are linked to the wheels
-    MecPixel.setExpiration(0.1);
-                                                              
+    m_frontRight.setInverted(true);
+    m_backRight.setInverted(true);
+    m_frontLeft.setInverted(false); //flips the left side of motors for wheels
+    m_backLeft.setInverted(false);//false cause... not needed this year
+ 
+    DifOrange = new DifferentialDrive(m_left, m_right); //hooks up the drive train with the PMW motors
+                                                                //that are linked to the wheels
+      DifOrange.setExpiration(0.1);                           
     gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
-
+    /*
     reeves.addColorMatch(BlueBoi);
     reeves.addColorMatch(GreenBoi);
     reeves.addColorMatch(RedBoi);
     reeves.addColorMatch(YellowBoi);
-  }
-
+    /*
+  
   /**
    * This function is called every robot packet, no matter the mode. Use
    * this for items like diagnostics that you want ran during disabled,
@@ -104,9 +112,10 @@ public class Robot extends TimedRobot {
    * <p>This runs after the mode specific periodic functions, but before
    * LiveWindow and SmartDashboard integrated updating.
    */
+  }
   @Override
   public void robotPeriodic(){
-    MecPixel.setSafetyEnabled(true);
+    DifOrange.setSafetyEnabled(true);
   }
 
   /**
@@ -122,12 +131,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    startTime = Timer.getFPGATimestamp();
 
-    clock.reset();
-		clock.start();
+     
   }
 
   /*
@@ -135,49 +141,36 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-          if(replay == 0){
-            while(clock.get() < 1.0){ 
-              MecPixel.driveCartesian(0.0, -0.4, 0.0, 0); // drive forwards
+    double time = Timer.getFPGATimestamp();
+            if(time < 1.0){ 
+              DifOrange.arcadeDrive(0.3, 0.1);
             }
-            while((clock.get() < 0.7) && (clock.get() > 1.0)){
-              DysonMotor1.set(-0.70);
-              DysonMotor2.set(-0.70);
-              craftsmanBLOW1.set(-1.0);
-              craftsmanBLOW2.set(1.0);
+            
+            if((time < 0.7) && (time > 1.0)){
+              DysonMotor.set(-0.70);
+              craftsmanBLOW.set(-1.0);
             }
-            while((clock.get() < 0.9) && (clock.get() > 0.7)){
-              MecPixel.driveCartesian(0.0, -0.25, 0.0, 0);
+
+            if((time < 0.9) && (time > 0.7)){
+              DifOrange.arcadeDrive(0.1, 0.3);
             }
             replay++;
           }
-        break;
-      case kDefaultAuto:
-      default:
-      if(replay == 0){
-        while(clock.get() < 3.0){ 
-          MecPixel.driveCartesian(0.0, 0.25, 0.0, 0); // drive forwards
-        }
-        replay++;
-      }
-        break;
-    }
-  }
+        
 
   // This function is called periodically during operator control.
   @Override
   public void teleopPeriodic() {
     yValue yylophone = new yValue(gStick.getY());
-    xValue xylophone = new xValue(gStick.getX());
     zValue zylophone = new zValue(gStick.getZ());
-
+    wValue wylophone = new wValue(gStick.getRawAxis(3));
     Fricker Shaquille = new Fricker(gStick.getThrottle());
 
-    Color pewach = chop.getColor();
+    /*
+    Color pewach = chop.getColor(1);
     String colorString = "c";
     ColorMatchResult match = reeves.matchClosestColor(pewach);
-
+    
     //ink colorPrint = new ink(pewach, colorString, match, BlueBoi, RedBoi, GreenBoi, YellowBoi);
 
     if(match.color == BlueBoi){
@@ -202,37 +195,58 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Confidence", match.confidence);
     SmartDashboard.putString("Detected Color", colorString);
     SmartDashboard.putNumber("# of Spins", topSpin);
-
-    MecPixel.driveCartesian(xylophone.xJoy(), yylophone.yJoy(), zylophone.zJoy(), 0.0); //sets driving to run using  //joystick controls
+*/
+    DifOrange.arcadeDrive(yylophone.yJoy(),zylophone.zJoy(), false); //sets driving to run using  //joystick controls
                                                                                         //joystick controls
-    FRICK.set(Shaquille.fThot());
+
 
     if(gStick.getRawButton(2) == true){
-        DysonMotor1.set(-0.78);
-        DysonMotor2.set(-0.78);
+        DysonMotor.set(-0.78);
     }
     else if(gStick.getRawButton(6) == true){
-        DysonMotor1.set(0.70);
-        DysonMotor2.set(0.70);
+        DysonMotor.set(0.70);
     }
     else{
-      DysonMotor1.set(0.0);
-      DysonMotor2.set(0.0);
+      DysonMotor.set(0.0);
     }
 
     if(gStick.getRawButton(1) == true){
-        craftsmanBLOW1.set(-0.37);
-        craftsmanBLOW2.set(0.37);
+        craftsmanBLOW.set(-0.37);
     }
     else if(gStick.getRawButton(3) == true){
-        craftsmanBLOW1.set(-1.0);
-        craftsmanBLOW2.set(1.0);
+        craftsmanBLOW.set(-1.0);
     }
     else{
-        craftsmanBLOW1.set(0.0);
-        craftsmanBLOW2.set(0.0);
+        craftsmanBLOW.set(0.0);
+
+    if(gStick.getRawButton(7) == true){
+      output = wylophone.wSlide();
+    }
+    else if(gStick.getRawButton(8) == true){
+      output = -wylophone.wSlide()/3;
+    }
+    else{
+      output = 0.0;
     }
 
+    if (gStick.getRawButton(9)){
+      MeganTheeStallion.set(wylophone.wSlide());
+    }
+    else if (SubFemboy.get()){
+    MeganTheeStallion.set(0);
+    }
+    else{
+      MeganTheeStallion.set(0);
+    }
+
+    if (DomGoth.get()){
+      output = Math.min(output, 0);
+    }
+    DojaCat.set(output);
+
+
+
+/*
     if(gStick.getRawButton(9) == true){
       while(match.color != BlueBoi){
         pewach = chop.getColor();
@@ -274,7 +288,6 @@ public class Robot extends TimedRobot {
     }
     else{
     }
-/*
     if(gStick.getRawButton(7) == true){
       while(topSpin < 3.8){
       FRICK.set(0.35);
@@ -305,7 +318,7 @@ public class Robot extends TimedRobot {
         break; 
       }
     }
-*/
+
     String gameData;
     gameData = DriverStation.getInstance().getGameSpecificMessage();
     if(gameData.length() > 0){
@@ -328,11 +341,10 @@ public class Robot extends TimedRobot {
     }
     else{
     }
-    
+    */
     topSpin = 0;
-
-    Timer.delay(0.001);    //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
-  }                       //over heating the RobotRIO
+   }   //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
+  }                      //over heating the RobotRIO
 
    // This function is called periodically during test mode.
   @Override
@@ -349,13 +361,13 @@ class yValue{
       return 0.0;
     }
     else if(yCal > 0.2){
-      return -yCal * 0.95;
+      return -yCal;
     }
     else if((yCal >= -0.2) && (yCal <= 0.0)){
       return 0.0;
     }
     else if(yCal < -0.2){
-      return -yCal * 0.95;
+      return -yCal;
     }
     else{
       return 0.0;
@@ -379,7 +391,7 @@ public double xJoy(){
     return 0.0;
   }
   else if(xCal < -0.2){
-    return xCal * 0.85;
+    return xCal;
   }
   else{
     return 0.0;
@@ -397,13 +409,13 @@ public double zJoy(){
     return 0.0;
   }
   else if(zCal > 0.3){
-    return (zCal * 0.8);
+    return (zCal * 0.5);
   }
   else if((zCal >= -0.3) && (zCal <= 0.0)){
     return 0.0;
   }
   else if(zCal < -0.3){
-    return (zCal * 0.8);
+    return (zCal * 0.5);
   }
   else{
     return 0.0;
@@ -412,6 +424,36 @@ public double zJoy(){
 public double zCal;
 }
 
+class wValue{
+  public wValue(double w){
+    wCal = w;
+  }
+  public double wSlide(){
+    if((wCal <= 0.3) && (wCal >= 0.0)){
+      return 0.0;
+    }
+    else if (wCal > 0.3){
+      return (wCal * 0.5);
+    }
+    else if((wCal >= -0.3) && (wCal <= 0.0)){
+      return 0.0;
+    }
+    else if(wCal < -0.3){
+      return (wCal * 0.5);
+    }
+    else{
+      return 0.0;
+    }
+
+  }
+  public double wCal;
+
+
+
+
+
+
+}
 class Fricker{
   public Fricker(double f){
     fCal = f;
@@ -435,7 +477,7 @@ class Fricker{
   }
 public double fCal;
 }
-
+/*
 class ink{
   public ink(Color c, String s, ColorMatchResult r, Color b1, Color r1, Color g1, Color y1){
     pewach = c;
@@ -472,3 +514,4 @@ class ink{
   public Color gBoi;
   public Color yBoi;
 }
+*/
