@@ -142,11 +142,11 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     double time = Timer.getFPGATimestamp();
-            if(time < 1.0){ 
+            if(time < 0.1){ 
               DifOrange.arcadeDrive(0.3, 0.1);
             }
             
-            if((time < 0.7) && (time > 1.0)){
+            if((time < 0.7) && (time > 0.1)){
               DysonMotor.set(-0.70);
               craftsmanBLOW.set(-1.0);
             }
@@ -154,7 +154,10 @@ public class Robot extends TimedRobot {
             if((time < 0.9) && (time > 0.7)){
               DifOrange.arcadeDrive(0.1, 0.3);
             }
-            replay++;
+            else{
+            DifOrange.arcadeDrive(0.0, 0.0);
+            DysonMotor.set(-0.70);
+            craftsmanBLOW.set(-1.0);
           }
         
 
