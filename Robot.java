@@ -13,6 +13,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.I2C;
+
+import java.time.Clock;
+
 import edu.wpi.first.cameraserver.*;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -29,10 +32,10 @@ public class Robot extends TimedRobot {
   private static final int legBottomLeft = 3;
   private static final int legTopRight = 1;
   private static final int legBottomRight = 0;
-  private static final int SUCC = 4; //other motors for other robot task
-  private static final int EXHALE = 5;
-  private static final int LIFT = 6;
-  private static final int DROP = 7;
+  private static final int SUCC = 6; //other motors for other robot task
+  private static final int EXHALE = 7;
+  private static final int LIFT = 4;
+  private static final int DROP = 5;
 
   //declaring integers (DIO ports) for sensors
   private static final int HALT = 0;
@@ -55,19 +58,21 @@ public class Robot extends TimedRobot {
   private DifferentialDrive DifOrange; //gives the drive train a name
   private Joystick gStick;  //gives the joystick a name
 
-  MotorController m_frontLeft = new PWMVictorSPX(legTopLeft);
-  MotorController m_backLeft = new PWMTalonSRX(legBottomLeft);
+  MotorController m_frontLeft = new PWMVictorSPX(legTopLeft);//2
+  MotorController m_backLeft = new PWMTalonSRX(legBottomLeft);//3
   MotorControllerGroup m_left = new MotorControllerGroup(m_frontLeft, m_backLeft);
-  MotorController m_frontRight = new PWMVictorSPX(legTopRight);
-  MotorController m_backRight = new PWMTalonSRX(legBottomRight);
+  MotorController m_frontRight = new PWMVictorSPX(legTopRight);//1
+  MotorController m_backRight = new PWMTalonSRX(legBottomRight);//0
   MotorControllerGroup m_right = new MotorControllerGroup(m_frontRight, m_backRight);
-  PWMVictorSPX DysonMotor = new PWMVictorSPX(SUCC);
-  PWMVictorSPX craftsmanBLOW = new PWMVictorSPX(EXHALE);
-  PWMVictorSPX MeganTheeStallion = new PWMVictorSPX(LIFT);
-  PWMSparkMax DojaCat = new PWMSparkMax(DROP);  /*
+  PWMSparkMax  DysonMotor = new PWMSparkMax(SUCC); //6
+  PWMTalonSRX craftsmanBLOW = new PWMTalonSRX(EXHALE); //5
+  PWMSparkMax  DojaCat = new PWMSparkMax(LIFT);//4
+  PWMVictorSPX MeganTheeStallion = new PWMVictorSPX(DROP);//7
+
+   /*
   private final ColorSensorV3 chop = new ColorSensorV3(i2cPort);
   private final ColorMatch reeves = new ColorMatch();
-
+  
   private fi89al Color BlueBoi = ColorMatch.makeColor(0.143, 0.427, 0.429);
   private final Color GreenBoi = ColorMatch.makeColor(0.197, 0.561, 0.240);
   private final Color RedBoi = ColorMatch.makeColor(0.561, 0.232, 0.114);
@@ -86,7 +91,7 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("Back shooter", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
     
-    CameraServer.getInstance().startAutomaticCapture();
+    CameraServer.startAutomaticCapture().setResolution(240,180);
 
     m_frontRight.setInverted(true);
     m_backRight.setInverted(true);
@@ -94,7 +99,8 @@ public class Robot extends TimedRobot {
     m_backLeft.setInverted(false);//false cause... not needed this year
  
     DifOrange = new DifferentialDrive(m_left, m_right); //hooks up the drive train with the PMW motors
-                                                                //that are linked to the wheels
+                                                 
+    //that are linked to the wheels
       DifOrange.setExpiration(0.1);                           
     gStick = new Joystick(gamer); //hooks up joysick to the usb port that is connected to the joystick
     /*
@@ -115,15 +121,14 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void robotPeriodic(){
-    DifOrange.setSafetyEnabled(true);
-  }
+    DifOrange.setSafetyEnabled(true);}
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
    * between different autonomous modes using the dashboard. The sendable
    * chooser code works with the Java SmartDashboard. If you prefer the
    * LabVIEW Dashboard, remove all of the chooser code and uncomment the
-   * getString line to get the auto name from the text box below the Gyro
+   * getString line to get the  auto name from the text box below the Gyro
    *
    * <p>You can add additional auto modes by adding additional comparisons to
    * the switch structure below with additional strings. If using the
@@ -142,25 +147,44 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     double time = Timer.getFPGATimestamp();
-            if(time < 0.1){ 
-              DifOrange.arcadeDrive(0.3, 0.1);
-            }
-            
-            if((time < 0.7) && (time > 0.1)){
-              DysonMotor.set(-0.70);
-              craftsmanBLOW.set(-1.0);
-            }
-
-            if((time < 0.9) && (time > 0.7)){
-              DifOrange.arcadeDrive(0.1, 0.3);
-            }
+    
+             if(time - startTime < 1){
+              m_frontLeft.set(0.3);
+              m_frontRight.set(0.3);
+              m_backLeft.set(0.3);
+              m_backRight.set(0.3);}
+            else if((time - startTime >= 1  && time - startTime < 3)){
+              craftsmanBLOW.set(-1.0);}         
+            else if(time - startTime >= 3  && time - startTime < 5){
+              DysonMotor.set(1.0);}
+            else if(time - startTime >= 5  && time - startTime < 8){
+              m_frontLeft.set(-0.6);
+              m_frontRight.set(-0.6);
+              m_backLeft.set(-0.6);
+              m_backRight.set(-0.6);
+             }
+             else if(time - startTime >= 8  && time - startTime < 9){
+              m_frontLeft.set(0.6);
+              m_frontRight.set(0.6);
+              m_backLeft.set(0.6);
+              m_backRight.set(0.6);
+             }
+             else if(time - startTime >= 9){
+              m_frontLeft.set(-0.6);
+              m_frontRight.set(0.6);
+              m_backLeft.set(-0.6);
+              m_backRight.set(0.6);
+             }
+           
             else{
-            DifOrange.arcadeDrive(0.0, 0.0);
-            DysonMotor.set(-0.70);
-            craftsmanBLOW.set(-1.0);
-          }
-        
-
+              m_frontLeft.set(0);
+              m_frontRight.set(0);
+              m_backLeft.set(0);
+              m_backRight.set(0);
+              craftsmanBLOW.set(0);
+              DysonMotor.set(0);
+            }
+            }
   // This function is called periodically during operator control.
   @Override
   public void teleopPeriodic() {
@@ -203,49 +227,55 @@ public class Robot extends TimedRobot {
                                                                                         //joystick controls
 
 
-    if(gStick.getRawButton(2) == true){
-        DysonMotor.set(-0.78);
+    if(gStick.getRawButton(6) == true){
+        DysonMotor.set(-0.35);
     }
-    else if(gStick.getRawButton(6) == true){
-        DysonMotor.set(0.70);
+    else if(gStick.getRawButton(2) == true){
+        DysonMotor.set(0.5);
+        craftsmanBLOW.set(1.0);
     }
     else{
       DysonMotor.set(0.0);
     }
 
     if(gStick.getRawButton(1) == true){
-        craftsmanBLOW.set(-0.37);
+        craftsmanBLOW.set(-1.0);
+        DysonMotor.set(1.0);
+      }
+    else if(gStick.getRawButton(5) == true){
+        craftsmanBLOW.set(1.0);
+        DysonMotor.set(-1.0);
     }
     else if(gStick.getRawButton(3) == true){
-        craftsmanBLOW.set(-1.0);
+      craftsmanBLOW.set(-1.0);
+    }
+    else if((gStick.getRawButton(3) && (gStick.getRawButton(1) == true)
+    )){
+      craftsmanBLOW.set(-1.0);
+      DysonMotor.set(1.0);
     }
     else{
         craftsmanBLOW.set(0.0);
 
-    if(gStick.getRawButton(7) == true){
-      output = wylophone.wSlide();
+    if(gStick.getRawButton(8) == true){
+       output = -wylophone.wSlide();
     }
-    else if(gStick.getRawButton(8) == true){
-      output = -wylophone.wSlide()/3;
+    else if(gStick.getRawButton(7) == true){
+      output = wylophone.wSlide();
     }
     else{
       output = 0.0;
     }
+    
 
-    if (gStick.getRawButton(9)){
-      MeganTheeStallion.set(wylophone.wSlide());
-    }
-    else if (SubFemboy.get()){
-    MeganTheeStallion.set(0);
-    }
-    else{
-      MeganTheeStallion.set(0);
-    }
-
-    if (DomGoth.get()){
+    if (DomGoth.get()==false){
       output = Math.min(output, 0);
     }
-    DojaCat.set(output);
+    else if (SubFemboy.get()==false){
+      output = Math.max(output, 0);}
+    }
+    MeganTheeStallion.set((-output));
+    DojaCat.set(output/2);
 
 
 
@@ -264,7 +294,7 @@ public class Robot extends TimedRobot {
         pewach = chop.getColor();
         match = reeves.matchClosestColor(pewach);
         FRICK.set(0.35);                            //goes to blue
-        //colorPrint.colorSplash();
+        //colorPrint.colorSplash(); 
         if(gStick.getRawButton(8) == true)
           break;
       }
@@ -323,7 +353,7 @@ public class Robot extends TimedRobot {
     }
 
     String gameData;
-    gameData = DriverStation.getInstance().getGameSpecificMessage();
+    gameData = DriverStation.getGameSpecificMessage();
     if(gameData.length() > 0){
       switch(gameData.charAt(0)){
         case 'B':
@@ -346,8 +376,10 @@ public class Robot extends TimedRobot {
     }
     */
     topSpin = 0;
+
+    Timer.delay(0.001);
    }   //timer sets up the code to have a 1 millisecond delay to avoid overworking and 
-  }                      //over heating the RobotRIO
+          //over heating the RobotRIO
 
    // This function is called periodically during test mode.
   @Override
@@ -432,21 +464,7 @@ class wValue{
     wCal = w;
   }
   public double wSlide(){
-    if((wCal <= 0.3) && (wCal >= 0.0)){
-      return 0.0;
-    }
-    else if (wCal > 0.3){
-      return (wCal * 0.5);
-    }
-    else if((wCal >= -0.3) && (wCal <= 0.0)){
-      return 0.0;
-    }
-    else if(wCal < -0.3){
-      return (wCal * 0.5);
-    }
-    else{
-      return 0.0;
-    }
+    return (-wCal+1)/2;
 
   }
   public double wCal;
@@ -510,6 +528,8 @@ class ink{
     return colorStr;
   }
   public Color pewach;
+
+  
   public String colorStr;
   public ColorMatchResult match;
   public Color bBoi;
